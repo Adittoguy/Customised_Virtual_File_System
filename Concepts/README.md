@@ -1,143 +1,92 @@
-📌 Overview
+🔧 Basic System Calls Required for CVFS
 
-The Customised Virtual File System (CVFS) is a technical implementation of an in-memory file system layer that emulates core Unix/POSIX system calls.
-This project demonstrates how an Operating System internally manages files, including metadata handling, data block allocation, and the lifecycle of file descriptors—without using the host OS file system.
+The Customised Virtual File System (CVFS) emulates essential Unix/POSIX system calls to demonstrate how an Operating System manages files internally. These system calls form the primary interface between the user and the virtual file system.
 
-The entire file system exists in memory and closely mirrors real kernel-level behavior.
+📂 1. creat()
 
-🎯 Project Objectives
+Purpose: Create a new file in the virtual file system.
 
-Understand internal working of Unix File Systems
+Description:
+  Allocates a new Inode, initializes file metadata (file name, size, permissions), reserves directory space, and returns a File Descriptor. If the file already exists, the call fails.
 
-Simulate kernel-level file handling mechanisms
+📂 2. open()
 
-Implement POSIX-compliant system calls
+Purpose: Open an existing file.
 
-Manage file metadata, blocks, and descriptors manually
+Description:
+  Searches the directory structure for the specified file. If found, an entry is created in the Global File Table, initializing access mode and file offset, and a File Descriptor is returned.
 
-🛠️ Implemented System Calls
+📂 3. close()
 
-The core functionality is built around the following POSIX-style system calls, which form the primary interface for interacting with the virtual storage.
+Purpose: Close an open file.
 
-🔹 1. File Lifecycle Management
-creat(name, mode)
+Description:
+  Releases the file descriptor associated with the file. Updates the process-specific File Descriptor Table and decrements the reference count in the Global File Table.
 
-Allocates a new Inode
+🗑️ 4. unlink()
 
-Initializes file metadata
+Purpose: Delete a file.
 
-Creates a directory entry
+Description:
+  Removes the filename-to-Inode mapping. Decrements the link count of the Inode. If the link count becomes zero and no file descriptors are open, the system deallocates all associated data blocks.
 
-Returns a unique File Descriptor (FD)
+✍️ 5. write()
 
-open(name, mode)
+Purpose: Write data to a file.
 
-Searches for the file’s Inode by name
+Description:
+  Copies data from a user buffer into the virtual disk blocks starting at the current file offset. Automatically allocates new blocks if the file size increases.
 
-Creates an entry in the Global File Table
+📖 6. read()
 
-Returns a File Descriptor
+Purpose: Read data from a file.
 
-close(fd)
+Description:
+  Retrieves data from the virtual disk blocks into a user buffer beginning at the current file offset. Reading beyond End Of File (EOF) is prevented.
 
-Releases the File Descriptor
+🔁 7. lseek()
 
-Updates the process-specific FD table
+Purpose: Change the current file offset.
 
-Decrements reference count in the Global File Table
+Description:
+  Modifies the read/write pointer based on the specified offset and reference point:
 
-unlink(name)
+  SEEK_SET → Beginning of file
+  SEEK_CUR → Current position
+  SEEK_END → End of file
 
-Removes the filename-to-Inode link
+📊 8. stat() / fstat()
 
-Decrements link count
+Purpose: Retrieve file metadata.
 
-Frees data blocks when link count reaches zero
+Description:
+  Returns information such as file size, permissions, type, and link count without modifying file contents.
 
-🔹 2. Data I/O and File Navigation
-write(fd, buffer, size)
+📋 9. ls()
 
-Writes data from user buffer into virtual disk blocks
+Purpose: List files in the virtual directory.
 
-Automatically allocates blocks if file grows
+Description:
+  Displays all existing files along with metadata such as file size and permissions.
 
-read(fd, buffer, size)
+❌ 10. truncate()
 
-Reads data from virtual blocks
+Purpose: Resize a file.
 
-Starts from the current file offset
+Description:
+  Adjusts the file size. If the size is reduced, extra data blocks are released. If increased, blocks are allocated.
 
-Prevents reading beyond EOF
+🧠 Why These System Calls Matter
 
-lseek(fd, offset, whence)
+These system calls collectively demonstrate:
 
-Modifies the current read/write offset.
+  File lifecycle management
+  Memory and block allocation
+  Metadata handling using Inodes
+  File descriptor and reference counting
+  Logical-to-physical address translation
 
-SEEK_SET → From beginning of file
+🎯 Summary
 
-SEEK_CUR → From current offset
+These basic system calls replicate how a real Unix kernel manages files, making CVFS an excellent project for understanding Operating System internals and system-level programming.
 
-SEEK_END → From end of file
-
-🏗️ Internal Data Structures
-
-The system relies on the following kernel-level abstractions:
-
-Structure	Purpose
-Inode	Stores file metadata such as size, type, permissions, and block pointers
-File Descriptor Table	Per-process table mapping FDs to open files
-Global File Table	Maintains offset, mode, and reference count for open files
-Block Bitmap	Tracks free and allocated memory blocks efficiently
-
-🔄 Core Logic Flow
-🔹 Space Allocation
-
-During creat() or write()
-
-  Block Bitmap is scanned for the first free block
-
-  Block is marked allocated
-
-🔹 Address Translation
-
-  Logical byte offset → Physical block address
-
-  Uses Inode’s block pointer array
-
-🔹 Reference Counting
-
-  Managed via the Global File Table
-
-  Ensures file persists as long as at least one FD is open
-
-🧠 Learning Outcomes
-
-  Deep understanding of file system internals
-
-  Practical exposure to OS kernel concepts
-
-  Hands-on experience with memory management
-
-  Strong foundation for system programming & OS interviews
-
-🚀 Use Cases
-
-  Operating System coursework
-
-  Interview preparation (OS + Systems)
-
-  Learning Unix internals
-
-  Academic demonstrations
-
-
-👨‍💻 Author
-
-Aditya Sanap
-Aspiring System Programmer & Software Developer
-
-📄 License
-
-This project is open-source and available under the MIT License.
-
-⭐ If this project helped you understand file systems, consider giving it a star!
