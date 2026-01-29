@@ -436,7 +436,7 @@ int CreateFile(
 
     // Search for empty UFDT entry
     // Note : 0,1,2 are reserved
-    for(i = 0; i < MAXOPENFILES; i++)
+    for(i = 3; i < MAXOPENFILES; i++)
     {
         if(uareaobj.UFDT[i] == NULL)
         {
@@ -507,6 +507,71 @@ void LsFile()
     }
     printf("----------------------------------------------------------------------------------\n");
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Function Name   :   UnlinkFile()
+//  Description     :   It is used to delete the exsisting file
+//  Input           :   FileName
+//  Output          :   Nothing
+//  Author          :   Aditya Bhaskar Sanap
+//  Date            :   22/01/2026
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+int UnlinkFile(
+                    char * name
+              )
+{
+    int i = 0;
+
+    if(name == NULL)
+    {
+        return ERR_INVALID_PARAMETER;
+    }
+
+    if(IsFileExist(name) == false)
+    {
+        return ERR_FILE_NOT_EXIST;
+    }
+
+    // Travel the UFDT
+    for(i = 0; i < MAXOPENFILES; i++)
+    {
+        if(uareaobj.UFDT[i] != NULL)
+        {
+            if(strcmp(uareaobj.UFDT[i]-> ptrinode->FileName, name) == 0)
+            {
+                // Deallocate memory of Buffer
+                free(uareaobj.UFDT[i]->ptrinode->Buffer);
+                uareaobj.UFDT[i]->ptrinode->Buffer = NULL;
+
+                // Reset all Values of Inode
+                // Dont deallocate memory of inode
+                uareaobj.UFDT[i]->ptrinode->FileSize = 0;
+                uareaobj.UFDT[i]->ptrinode->ActualFileSize = 0;
+                uareaobj.UFDT[i]->ptrinode->FileType = 0;
+                uareaobj.UFDT[i]->ptrinode->ReferenceCount = 0;
+                uareaobj.UFDT[i]->ptrinode->Permission = 0;
+                
+                memset(uareaobj.UFDT[i]->ptrinode->FileName, '\0', sizeof(uareaobj.UFDT[i]->ptrinode->FileName));
+
+                // Deallocate memory of file table
+                free(uareaobj.UFDT[i]);
+
+                // Set NULL to UFDT
+                uareaobj.UFDT[i] = NULL;
+
+                // Increment FreeInodes Count
+                superobj.FreeInodes++;
+                break;                              // IMP
+            } // End of if
+        } // End of if
+    } // End of for
+
+    return EXECUTE_SUCCESS;
+
+} // End of function
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -584,6 +649,28 @@ int main()
             {
                 ManPageDisplay(Command[1]);
             }
+
+            // Marvellous CVFS :> unlink Demo.txt
+            if(strcmp("unlink", Command[0]) == 0)
+            {
+                iRet = UnlinkFile(Command[1]);
+
+                if(iRet == ERR_INVALID_PARAMETER)
+                {
+                    printf("Error : Invalid Parameter\n");
+                }
+                
+                if(iRet == ERR_FILE_NOT_EXIST)
+                {
+                    printf("Error : There is No such file\n");
+                }
+
+                if(iRet == EXECUTE_SUCCESS)
+                {
+                    printf("File Deleted Successfully\n");
+                }
+            }
+
         }// End of else if 2
         else if(iCount == 3)
         {
@@ -595,26 +682,30 @@ int main()
                 if(iRet == ERR_INVALID_PARAMETER)
                 {
                     printf("Error : Unable to create the file as parameters are invalid\n");
-                    printf("Please refer man page");
+                    printf("Please refer man page\n");
                 }
 
                 if(iRet == ERR_NO_INODES)
                 {
-                    printf("Error : Unable to create the file as there is no inode left");
+                    printf("Error : Unable to create the file as there is no inode left\n");
                 }
 
                 if(iRet == ERR_FILE_ALREADY_EXIST)
                 {
-                    printf("Error : Unablet o create file because file already exist");
+                    printf("Error : Unablet o create file because file already exist\n");
                 }
 
                 if(iRet == ERR_MAX_FILES_OPEN)
                 {
                     printf("Error : Unable to create file\n");
-                    printf("Max opened file limit reached");
+                    printf("Max opened file limit reached\n");
                 }
 
                 printf("File gets successfully created with fd %d\n", iRet);
+            }
+            else
+            {
+                printf("There is no such Command\n");
             }
         }// End of else if 3
         else if(iCount == 4)
